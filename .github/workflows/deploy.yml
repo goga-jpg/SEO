@@ -24,34 +24,20 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Build site (nest under /SEO)
+      - name: Build site
         run: |
           set -euo pipefail
-          mkdir -p _site/SEO
-          # Copy everything except build artifacts / git / workflows into /SEO
+          mkdir -p _site
+          # Publish the platform at the GitHub Pages root.
+          # The client-side router auto-detects its base path, so this
+          # works at https://<user>.github.io/<repo>/ AND at
+          # https://dashboards.5dm.africa/SEO/ once uploaded there.
           rsync -a \
             --exclude='.git' \
             --exclude='.github' \
             --exclude='_site' \
             --exclude='node_modules' \
-            ./ _site/SEO/
-          # Root index redirects visitors from the apex to /SEO/
-          cat > _site/index.html <<'HTML'
-          <!DOCTYPE html>
-          <html><head>
-            <meta charset="UTF-8"/>
-            <title>5DM SEO Audit Platform</title>
-            <meta http-equiv="refresh" content="0; url=./SEO/">
-            <link rel="canonical" href="./SEO/"/>
-          </head><body>
-            <script>window.location.replace("./SEO/");</script>
-            <p>Redirecting to <a href="./SEO/">/SEO/</a>…</p>
-          </body></html>
-          HTML
-          # Root 404 forwards any /something path to /SEO/?redirect=/something
-          cp _site/SEO/404.html _site/404.html
-          # Custom domain for GitHub Pages
-          echo "dashboards.5dm.africa" > _site/CNAME
+            ./ _site/
 
       - name: Upload Pages artifact
         uses: actions/upload-pages-artifact@v3

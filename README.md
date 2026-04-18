@@ -29,24 +29,32 @@ The bundled server mirrors the production `/SEO/{slug}` routing so pretty URLs w
 
 ## Deployment
 
-### Option A — GitHub Pages at `dashboards.5dm.africa/SEO` (recommended)
+### Option A — Upload into your existing `dashboards.5dm.africa` host (recommended)
 
-This repo ships a GitHub Actions workflow (`.github/workflows/deploy.yml`) that publishes the platform to GitHub Pages under the `/SEO/` path and attaches the custom domain `dashboards.5dm.africa`.
+Since `dashboards.5dm.africa` is already live, the cleanest path is to drop this platform into an `SEO/` folder on the same host that serves it.
 
-**One-time setup:**
+**Steps:**
 
-1. On GitHub: **Settings → Pages → Build and deployment → Source: GitHub Actions**.
-2. In your DNS provider for `5dm.africa`, add a CNAME record:
-   - **Host:** `dashboards`
-   - **Value:** `<your-github-user>.github.io` (e.g. `goga-jpg.github.io`)
-3. Push to `main` (or the deploy branch configured in the workflow). The site builds automatically and becomes available at `https://dashboards.5dm.africa/SEO/`.
-4. In **Settings → Pages → Custom domain** confirm `dashboards.5dm.africa` and enable **Enforce HTTPS** once the certificate provisions.
+1. **Download the ready-to-upload zip** (choose one):
+   - **From a release** — tag `v1.0.0` (or any `v*` tag) and the **Package downloadable release** workflow attaches `5dm-seo-audit-platform.zip` to the GitHub Release automatically.
+   - **Manually from Actions** — on GitHub: **Actions → Package downloadable release → Run workflow**. When it finishes, download the `5dm-seo-audit-platform` artifact.
+   - **Git clone** — `git clone https://github.com/goga-jpg/seo && cd seo && git checkout claude/seo-audit-platform-dtqrj`.
 
-The workflow also installs a root-level redirect so `https://dashboards.5dm.africa/` forwards to `/SEO/`.
+2. **Upload the `SEO/` folder** into your web root for `dashboards.5dm.africa`. The final layout must be:
+   ```
+   <dashboards-web-root>/SEO/index.html
+   <dashboards-web-root>/SEO/css/...
+   <dashboards-web-root>/SEO/js/...
+   <dashboards-web-root>/SEO/.htaccess
+   ```
 
-### Option B — Download the release zip
+3. **Visit `https://dashboards.5dm.africa/SEO/`** and unlock with `5DMSEO`. That's it.
 
-Tag a release (`git tag v1.0.0 && git push --tags`) or run the **Package downloadable release** workflow manually. A `5dm-seo-audit-platform.zip` will be attached to the release and available under **Actions → artifacts**. Unzip it so the inner `SEO/` folder lives at your web root and visit `/SEO/`.
+The included `.htaccess` handles the `/SEO/{BrandName}` pretty URL fallback on Apache/cPanel hosts. If `dashboards.5dm.africa` runs on Nginx, Netlify, Vercel, Cloudflare Pages or anything else, the matching fallback config is already in the folder (`_redirects`, `vercel.json`, `404.html`).
+
+### Option B — GitHub Pages preview URL
+
+This repo ships a GitHub Actions workflow (`.github/workflows/deploy.yml`) that publishes the platform to GitHub Pages. Once **Settings → Pages → Source: GitHub Actions** is enabled, the platform is previewable at `https://goga-jpg.github.io/seo/` — useful for testing before uploading to `dashboards.5dm.africa`. No DNS change required.
 
 ### Option C — Any static host
 
