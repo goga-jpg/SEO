@@ -3,9 +3,15 @@
   "use strict";
 
   const PSI_ENDPOINT = "https://www.googleapis.com/pagespeedonline/v5/runPagespeed";
+  const FETCH_TIMEOUT_MS = 15000;
+  // Multiple proxies — the audit retries across all of them before giving up,
+  // so a single flaky provider doesn't break the whole run.
   const PROXIES = [
-    function (u) { return "https://api.allorigins.win/get?url=" + encodeURIComponent(u); },
-    function (u) { return "https://corsproxy.io/?" + encodeURIComponent(u); },
+    { name: "allorigins-raw", url: function (u) { return "https://api.allorigins.win/raw?url=" + encodeURIComponent(u); }, mode: "text" },
+    { name: "corsproxy.io", url: function (u) { return "https://corsproxy.io/?" + encodeURIComponent(u); }, mode: "text" },
+    { name: "codetabs", url: function (u) { return "https://api.codetabs.com/v1/proxy/?quest=" + encodeURIComponent(u); }, mode: "text" },
+    { name: "allorigins-get", url: function (u) { return "https://api.allorigins.win/get?url=" + encodeURIComponent(u); }, mode: "allorigins" },
+    { name: "thingproxy", url: function (u) { return "https://thingproxy.freeboard.io/fetch/" + u; }, mode: "text" },
   ];
 
   function normalizeUrl(raw) {
@@ -20,29 +26,39 @@
     }
   }
 
+  function fetchWithTimeout(url, opts, timeoutMs) {
+    const ctrl = ("AbortController" in window) ? new AbortController() : null;
+    const timer = setTimeout(function () { if (ctrl) ctrl.abort(); }, timeoutMs || FETCH_TIMEOUT_MS);
+    const options = Object.assign({}, opts || {});
+    if (ctrl) options.signal = ctrl.signal;
+    return fetch(url, options).finally(function () { clearTimeout(timer); });
+  }
+
   async function fetchWithProxy(targetUrl) {
-    let lastError = null;
+    const errors = [];
     for (let i = 0; i < PROXIES.length; i++) {
+      const p = PROXIES[i];
       try {
-        const proxyUrl = PROXIES[i](targetUrl);
-        const res = await fetch(proxyUrl, { method: "GET" });
+        const res = await fetchWithTimeout(p.url(targetUrl), { method: "GET" }, FETCH_TIMEOUT_MS);
         if (!res.ok) throw new Error("HTTP " + res.status);
-        // allorigins returns JSON with .contents; corsproxy returns raw body
-        const ct = res.headers.get("content-type") || "";
-        if (ct.includes("application/json")) {
+        if (p.mode === "allorigins") {
           const json = await res.json();
-          if (json && typeof json.contents === "string") return json.contents;
           if (json && json.status && json.status.http_code && json.status.http_code >= 400) {
-            throw new Error("Proxy HTTP " + json.status.http_code);
+            throw new Error("origin HTTP " + json.status.http_code);
           }
-          if (typeof json === "string") return json;
+          if (json && typeof json.contents === "string" && json.contents.length) return json.contents;
+          throw new Error("empty body");
         }
-        return await res.text();
+        const body = await res.text();
+        if (!body || body.length < 20) throw new Error("empty body");
+        return body;
       } catch (err) {
-        lastError = err;
+        errors.push(p.name + ": " + (err && err.message ? err.message : err));
       }
     }
-    throw lastError || new Error("Unable to fetch target site.");
+    const e = new Error("All proxies failed — " + errors.join(" | "));
+    e.proxyErrors = errors;
+    throw e;
   }
 
   function parseHtml(html) {
@@ -241,13 +257,35 @@
     return findings;
   }
 
+  function isPubliclyReachable(url) {
+    try {
+      const h = new URL(url).hostname;
+      if (!h) return false;
+      if (h === "localhost" || h === "127.0.0.1" || h.endsWith(".local")) return false;
+      if (/^10\./.test(h) || /^192\.168\./.test(h)) return false;
+      if (/^172\.(1[6-9]|2\d|3[0-1])\./.test(h)) return false;
+      return true;
+    } catch (_) { return false; }
+  }
+
   async function runPageSpeed(url) {
+    if (!isPubliclyReachable(url)) {
+      throw new Error("PageSpeed Insights can only audit publicly reachable URLs.");
+    }
     const endpoint = PSI_ENDPOINT
       + "?url=" + encodeURIComponent(url)
       + "&strategy=mobile"
       + "&category=performance&category=seo&category=accessibility&category=best-practices";
-    const res = await fetch(endpoint);
-    if (!res.ok) throw new Error("PageSpeed Insights request failed (" + res.status + ")");
+    // PSI can legitimately take 45–60s on slow sites.
+    const res = await fetchWithTimeout(endpoint, { method: "GET" }, 90000);
+    if (!res.ok) {
+      let detail = "HTTP " + res.status;
+      try {
+        const errJson = await res.json();
+        if (errJson && errJson.error && errJson.error.message) detail = errJson.error.message;
+      } catch (_) { /* ignore */ }
+      throw new Error("PageSpeed Insights request failed (" + detail + ")");
+    }
     const data = await res.json();
     const cats = data && data.lighthouseResult && data.lighthouseResult.categories;
     if (!cats) throw new Error("PageSpeed Insights returned no data.");
@@ -374,6 +412,15 @@
     );
   }
 
+  function fetchFailedFindings(kind, reason) {
+    return [{
+      status: "info",
+      tag: "Note",
+      title: kind + " checks couldn't fetch the page",
+      body: "The browser couldn't retrieve the target HTML through any public CORS proxy — this usually means the site blocks automated access (Cloudflare/WAF) or all free proxies are temporarily rate-limited. The performance, accessibility and technical-SEO sections still run against Google's servers. Details: " + reason,
+    }];
+  }
+
   async function runAudit(input, onStep) {
     function step(name) { if (typeof onStep === "function") onStep(name); }
 
@@ -381,27 +428,56 @@
     if (!url) throw new Error("Please provide a valid website URL.");
 
     step("fetch");
-    let html = "";
-    try {
-      html = await fetchWithProxy(url);
-    } catch (e) {
-      throw new Error("Unable to fetch the target site. Please verify the URL is publicly reachable. (" + e.message + ")");
-    }
-    const doc = parseHtml(html);
+    // Fetch HTML and run PageSpeed Insights in parallel so one slow call
+    // doesn't block the other, and a proxy failure can't kill the run.
+    const htmlPromise = fetchWithProxy(url).catch(function (e) { return { __error: e }; });
+    const psiPromise = runPageSpeed(url).catch(function (e) { return { __error: e }; });
+    const technicalPromise = analyzeTechnical(url);
 
     step("parse");
-    const onpage = analyzeOnPage(doc, url);
-    const social = analyzeSocial(doc);
-    const content = analyzeContent(doc);
+    const htmlResult = await htmlPromise;
+    let doc = null;
+    let fetchError = null;
+    if (htmlResult && htmlResult.__error) {
+      fetchError = htmlResult.__error;
+    } else if (typeof htmlResult === "string") {
+      doc = parseHtml(htmlResult);
+    }
+
+    let onpage, social, content;
+    if (doc) {
+      onpage = analyzeOnPage(doc, url);
+      social = analyzeSocial(doc);
+      content = analyzeContent(doc);
+    } else {
+      onpage = fetchFailedFindings("On-page", fetchError && fetchError.message || "unknown");
+      social = fetchFailedFindings("Social", fetchError && fetchError.message || "unknown");
+      content = fetchFailedFindings("Content", fetchError && fetchError.message || "unknown");
+    }
     const security = analyzeSecurity(url);
 
     step("pagespeed");
+    const psiResult = await psiPromise;
     let psi = null;
-    try { psi = await runPageSpeed(url); } catch (_) { psi = null; }
+    let psiError = null;
+    if (psiResult && psiResult.__error) psiError = psiResult.__error;
+    else psi = psiResult;
     const psiFindings = psiToFindings(psi);
+    if (!psi && psiError) {
+      psiFindings.performance.unshift({
+        status: "info", tag: "Note",
+        title: "PageSpeed Insights unavailable",
+        body: "Couldn't reach Google's PageSpeed Insights API: " + psiError.message + ". Scores will be omitted from this run.",
+      });
+      psiFindings.accessibility.unshift({
+        status: "info", tag: "Note",
+        title: "PageSpeed Insights unavailable",
+        body: "Couldn't reach Google's PageSpeed Insights API: " + psiError.message,
+      });
+    }
 
     step("technical");
-    const technical = await analyzeTechnical(url);
+    const technical = await technicalPromise;
 
     step("score");
     const performance = psiFindings.performance;

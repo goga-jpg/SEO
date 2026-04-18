@@ -198,10 +198,30 @@
         steps.forEach(function (li) { li.classList.add("done"); li.classList.remove("active"); });
         setTimeout(function () { navigate("/" + encodeURIComponent(slug)); }, 400);
       } catch (err) {
-        toast(err.message || "Audit failed.");
-        setTimeout(function () { navigate("/new", true); }, 100);
+        console.error("[5DM SEO] Audit failed:", err);
+        const msg = (err && err.message) ? err.message : "Audit failed.";
+        toast(msg);
+        // Render an actionable error screen so the user isn't dumped back to a blank form.
+        const app = document.getElementById("app");
+        app.innerHTML =
+          '<section class="wizard"><div class="wizard-card">' +
+          '<h2>Audit couldn\'t complete</h2>' +
+          '<p class="muted">' + escapeHtml(msg) + '</p>' +
+          '<p class="muted">This usually means the target site is blocking automated access, all public CORS proxies are rate-limited right now, or the URL isn\'t publicly reachable. Try again in a minute, or switch to a different URL.</p>' +
+          '<div class="wizard-actions">' +
+          '<button type="button" class="btn btn-ghost" data-action="back-home">Back to dashboard</button>' +
+          '<button type="button" class="btn btn-primary" data-action="retry">Try again</button>' +
+          '</div></div></section>';
+        app.querySelector('[data-action="back-home"]').addEventListener("click", function () { navigate("/"); });
+        app.querySelector('[data-action="retry"]').addEventListener("click", function () { navigate("/new", true); });
       }
     });
+  }
+
+  function escapeHtml(s) {
+    return String(s || "")
+      .replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;")
+      .replace(/"/g, "&quot;").replace(/'/g, "&#39;");
   }
 
   // REPORT
