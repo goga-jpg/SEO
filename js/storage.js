@@ -39,10 +39,15 @@
     if (!slug) return null;
     const map = readAll();
     const needle = String(slug).toLowerCase();
-    // case-insensitive match on slug
     const hit = Object.values(map).find(function (a) {
       return (a.slug || "").toLowerCase() === needle;
     });
+    if (hit && !hit.password) {
+      // Back-fill a password for legacy audits so the gate works.
+      hit.password = String(hit.slug).toLowerCase() + "-access";
+      map[hit.id] = hit;
+      writeAll(map);
+    }
     return hit || null;
   }
 
@@ -82,6 +87,16 @@
     return sessionStorage.getItem(KEY_AUTH) === "1";
   }
 
+  const KEY_AUDIT_GRANT_PREFIX = "5dm_audit_grant_";
+  function grantAuditAccess(slug) {
+    if (!slug) return;
+    sessionStorage.setItem(KEY_AUDIT_GRANT_PREFIX + String(slug).toLowerCase(), "1");
+  }
+  function hasAuditAccess(slug) {
+    if (!slug) return false;
+    return sessionStorage.getItem(KEY_AUDIT_GRANT_PREFIX + String(slug).toLowerCase()) === "1";
+  }
+
   window.Storage = {
     slugify: slugify,
     uniqueSlug: uniqueSlug,
@@ -91,5 +106,7 @@
     deleteAudit: deleteAudit,
     setAuthed: setAuthed,
     isAuthed: isAuthed,
+    grantAuditAccess: grantAuditAccess,
+    hasAuditAccess: hasAuditAccess,
   };
 })();

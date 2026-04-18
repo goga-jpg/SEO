@@ -75,31 +75,34 @@
   function analyzeOnPage(doc, url) {
     const findings = [];
 
-    const title = (doc.querySelector("title") && doc.querySelector("title").textContent || "").trim();
+    const titleEl = doc.querySelector("title");
+    const title = (titleEl && titleEl.textContent || "").trim();
+    const titleDetails = { label: "Current <title>", items: title ? [title] : [] };
     if (!title) {
       findings.push({ status: "fail", tag: "Critical", title: "Missing <title> tag", body: "Every page must have a unique, descriptive title tag. It's one of the strongest on-page ranking factors." });
     } else if (title.length < 30) {
-      findings.push({ status: "warn", tag: "Improve", title: "Title tag is short", body: "Your title is " + title.length + " characters. Aim for 50–60 characters to maximize SERP real estate.", code: title });
+      findings.push({ status: "warn", tag: "Improve", title: "Title tag is short (" + title.length + " chars)", body: "Aim for 50–60 characters to maximize SERP real estate.", code: title, details: titleDetails });
     } else if (title.length > 65) {
-      findings.push({ status: "warn", tag: "Improve", title: "Title tag is too long", body: "Your title is " + title.length + " characters and may be truncated in search results. Aim for 50–60.", code: title });
+      findings.push({ status: "warn", tag: "Improve", title: "Title tag is too long (" + title.length + " chars)", body: "Google may truncate titles over ~60 characters.", code: title, details: titleDetails });
     } else {
-      findings.push({ status: "pass", tag: "Good", title: "Well-sized <title> tag", body: "Title is " + title.length + " characters.", code: title });
+      findings.push({ status: "pass", tag: "Good", title: "Well-sized <title> (" + title.length + " chars)", body: "Within the recommended 50–60 character range.", code: title, details: titleDetails });
     }
 
     const desc = getMeta(doc, 'meta[name="description" i]');
+    const descDetails = { label: "Current meta description", items: desc ? [desc] : [] };
     if (!desc) {
       findings.push({ status: "fail", tag: "Critical", title: "Missing meta description", body: "Add a compelling meta description between 140–160 characters. It impacts click-through rates from the SERP." });
     } else if (desc.length < 80) {
-      findings.push({ status: "warn", tag: "Improve", title: "Meta description is short", body: "Currently " + desc.length + " characters. Aim for 140–160 characters.", code: desc });
+      findings.push({ status: "warn", tag: "Improve", title: "Meta description is short (" + desc.length + " chars)", body: "Aim for 140–160 characters.", code: desc, details: descDetails });
     } else if (desc.length > 170) {
-      findings.push({ status: "warn", tag: "Improve", title: "Meta description is too long", body: "Currently " + desc.length + " characters. Google may truncate descriptions longer than ~160.", code: desc });
+      findings.push({ status: "warn", tag: "Improve", title: "Meta description too long (" + desc.length + " chars)", body: "Google may truncate descriptions longer than ~160.", code: desc, details: descDetails });
     } else {
-      findings.push({ status: "pass", tag: "Good", title: "Meta description is well-sized", body: desc.length + " characters.", code: desc });
+      findings.push({ status: "pass", tag: "Good", title: "Meta description is well-sized (" + desc.length + " chars)", body: "Within recommended 140–160 character range.", code: desc, details: descDetails });
     }
 
     const canonical = doc.querySelector('link[rel="canonical"]');
     if (!canonical || !canonical.getAttribute("href")) {
-      findings.push({ status: "warn", tag: "Improve", title: "Missing canonical tag", body: "Add a <link rel=\"canonical\"> to prevent duplicate content issues, especially across tracking parameters." });
+      findings.push({ status: "warn", tag: "Improve", title: "Missing canonical tag", body: "Add a <link rel=\"canonical\"> to prevent duplicate content issues across tracking parameters." });
     } else {
       findings.push({ status: "pass", tag: "Good", title: "Canonical tag present", body: "Canonical URL is set.", code: canonical.getAttribute("href") });
     }
@@ -111,47 +114,89 @@
       findings.push({ status: "pass", tag: "Good", title: "No noindex directive", body: "The page is open to indexing." + (robots ? " Robots: " + robots : "") });
     }
 
+    const viewport = getMeta(doc, 'meta[name="viewport" i]');
+    if (!viewport) {
+      findings.push({ status: "warn", tag: "Improve", title: "Missing viewport meta", body: "Add <meta name=\"viewport\" content=\"width=device-width, initial-scale=1\"> for mobile rendering." });
+    } else {
+      findings.push({ status: "pass", tag: "Good", title: "Viewport meta set", body: "Mobile rendering hint is in place.", code: viewport });
+    }
+
     const h1s = Array.from(doc.querySelectorAll("h1"));
+    const h1Texts = h1s.map(function (h) { return (h.textContent || "").trim().slice(0, 180); }).filter(Boolean);
     if (h1s.length === 0) {
       findings.push({ status: "fail", tag: "Critical", title: "Missing H1", body: "Every indexable page should have exactly one descriptive H1." });
     } else if (h1s.length > 1) {
-      findings.push({ status: "warn", tag: "Improve", title: "Multiple H1 tags detected", body: "Found " + h1s.length + " H1 tags. Consolidate into a single descriptive H1 and use H2/H3 for subsections." });
+      findings.push({ status: "warn", tag: "Improve", title: "Multiple H1 tags (" + h1s.length + ")", body: "Consolidate into a single descriptive H1 and use H2/H3 for subsections.", details: { label: "H1 texts found", items: h1Texts } });
     } else {
-      findings.push({ status: "pass", tag: "Good", title: "Single H1 tag", body: "H1: \"" + (h1s[0].textContent || "").trim().slice(0, 120) + "\"" });
+      findings.push({ status: "pass", tag: "Good", title: "Single H1 tag", body: "One clear H1 declared.", code: h1Texts[0] || "" });
     }
 
-    const h2s = doc.querySelectorAll("h2").length;
-    const h3s = doc.querySelectorAll("h3").length;
-    if (h2s === 0) {
-      findings.push({ status: "warn", tag: "Improve", title: "No H2 subheadings", body: "Subheadings help users scan content and give crawlers structure." });
+    const headingOutline = [];
+    Array.from(doc.querySelectorAll("h1, h2, h3, h4")).forEach(function (h) {
+      headingOutline.push(h.tagName.toLowerCase().toUpperCase() + " — " + (h.textContent || "").trim().slice(0, 140));
+    });
+    const h2Count = doc.querySelectorAll("h2").length;
+    const h3Count = doc.querySelectorAll("h3").length;
+    if (h2Count === 0) {
+      findings.push({ status: "warn", tag: "Improve", title: "No H2 subheadings", body: "Subheadings help users scan content and give crawlers structure.", details: { label: "Heading outline", items: headingOutline } });
     } else {
-      findings.push({ status: "pass", tag: "Good", title: "Clear heading structure", body: h2s + " H2 and " + h3s + " H3 subheadings found." });
+      findings.push({ status: "pass", tag: "Good", title: "Clear heading structure", body: h2Count + " H2 and " + h3Count + " H3 subheadings found.", details: { label: "Heading outline", items: headingOutline } });
     }
 
     const imgs = Array.from(doc.querySelectorAll("img"));
-    const missingAlt = imgs.filter(function (i) { return !i.getAttribute("alt") || !i.getAttribute("alt").trim(); }).length;
+    const missingAltSrcs = imgs
+      .filter(function (i) { return !i.getAttribute("alt") || !i.getAttribute("alt").trim(); })
+      .map(function (i) { return i.getAttribute("src") || i.getAttribute("data-src") || "(inline image)"; });
     if (imgs.length === 0) {
       findings.push({ status: "info", tag: "Info", title: "No images detected", body: "Images were not found in the page markup (they may be injected by JavaScript)." });
-    } else if (missingAlt === 0) {
-      findings.push({ status: "pass", tag: "Good", title: "All images have alt text", body: imgs.length + " images scanned." });
+    } else if (missingAltSrcs.length === 0) {
+      findings.push({ status: "pass", tag: "Good", title: "All " + imgs.length + " images have alt text", body: "Great for accessibility and image SEO." });
     } else {
-      findings.push({ status: "warn", tag: "Improve", title: missingAlt + " of " + imgs.length + " images missing alt text", body: "Descriptive alt text improves accessibility and image SEO." });
+      findings.push({
+        status: "warn", tag: "Improve",
+        title: missingAltSrcs.length + " of " + imgs.length + " images missing alt text",
+        body: "Descriptive alt text improves accessibility and image SEO.",
+        details: { label: "Images missing alt", items: missingAltSrcs },
+      });
     }
 
     try {
       const host = new URL(url).hostname;
       const links = Array.from(doc.querySelectorAll("a[href]"));
-      let internal = 0, external = 0, nofollow = 0;
+      let internalLinks = [], externalLinks = [], nofollowLinks = [];
       links.forEach(function (a) {
         const href = a.getAttribute("href") || "";
+        const text = (a.textContent || "").trim().slice(0, 90);
         try {
           const abs = new URL(href, url);
-          if (abs.hostname === host) internal++;
-          else if (abs.protocol.startsWith("http")) external++;
+          const entry = { href: abs.toString(), text: text || abs.hostname };
+          if (abs.hostname === host) internalLinks.push(entry);
+          else if (abs.protocol.startsWith("http")) externalLinks.push(entry);
         } catch (_) { /* ignore */ }
-        if ((a.getAttribute("rel") || "").toLowerCase().includes("nofollow")) nofollow++;
+        if ((a.getAttribute("rel") || "").toLowerCase().includes("nofollow")) {
+          nofollowLinks.push({ href: href, text: text });
+        }
       });
-      findings.push({ status: "info", tag: "Signal", title: "Link profile", body: internal + " internal, " + external + " external, " + nofollow + " nofollow links on this page." });
+      const emptyAnchor = links.filter(function (a) { return !(a.textContent || "").trim() && !a.querySelector("img[alt]"); });
+      findings.push({
+        status: "info", tag: "Signal", title: "Link profile",
+        body: internalLinks.length + " internal, " + externalLinks.length + " external, " + nofollowLinks.length + " nofollow links on this page.",
+        details: { label: "Internal links (first 40)", items: internalLinks.slice(0, 40).map(function (l) { return l.text + "  —  " + l.href; }) },
+      });
+      if (externalLinks.length) {
+        findings.push({
+          status: "info", tag: "Signal", title: "External links",
+          body: externalLinks.length + " external link(s) detected.",
+          details: { label: "External links (first 40)", items: externalLinks.slice(0, 40).map(function (l) { return l.text + "  —  " + l.href; }) },
+        });
+      }
+      if (emptyAnchor.length) {
+        findings.push({
+          status: "warn", tag: "Improve", title: emptyAnchor.length + " empty or non-descriptive link(s)",
+          body: "Links without anchor text (or with just an image without alt) hurt accessibility and SEO.",
+          details: { label: "Empty anchors (first 20)", items: emptyAnchor.slice(0, 20).map(function (a) { return (a.getAttribute("href") || "(no href)"); }) },
+        });
+      }
     } catch (_) { /* ignore */ }
 
     return findings;
@@ -159,21 +204,42 @@
 
   function analyzeSocial(doc) {
     const findings = [];
-    const ogTitle = getMeta(doc, 'meta[property="og:title" i]');
-    const ogDesc = getMeta(doc, 'meta[property="og:description" i]');
-    const ogImage = getMeta(doc, 'meta[property="og:image" i]');
-    const twCard = getMeta(doc, 'meta[name="twitter:card" i]');
+    const ogTags = ["og:title", "og:description", "og:image", "og:url", "og:type", "og:site_name"];
+    const twTags = ["twitter:card", "twitter:title", "twitter:description", "twitter:image"];
+    const ogPresent = {}, ogMissing = [];
+    ogTags.forEach(function (t) {
+      const v = getMeta(doc, 'meta[property="' + t + '" i]');
+      if (v) ogPresent[t] = v; else ogMissing.push(t);
+    });
+    const twPresent = {}, twMissing = [];
+    twTags.forEach(function (t) {
+      const v = getMeta(doc, 'meta[name="' + t + '" i]');
+      if (v) twPresent[t] = v; else twMissing.push(t);
+    });
 
-    if (ogTitle && ogDesc && ogImage) {
-      findings.push({ status: "pass", tag: "Good", title: "Open Graph tags present", body: "og:title, og:description and og:image are configured for rich social previews." });
+    const ogPresentList = Object.keys(ogPresent).map(function (k) { return k + " = " + ogPresent[k]; });
+    if (ogMissing.length === 0) {
+      findings.push({ status: "pass", tag: "Good", title: "Open Graph fully configured", body: "All core OG tags are present — links will render as rich previews on Facebook, LinkedIn, WhatsApp and more.", details: { label: "Open Graph tags", items: ogPresentList } });
+    } else if (ogMissing.length >= ogTags.length - 1) {
+      findings.push({ status: "fail", tag: "Critical", title: "Open Graph tags missing", body: "Add the core og:title, og:description, og:image tags so your brand renders properly when shared.", details: { label: "Missing Open Graph tags", items: ogMissing } });
     } else {
-      findings.push({ status: "warn", tag: "Improve", title: "Incomplete Open Graph tags", body: "Add og:title, og:description and og:image to get branded previews when your pages are shared on social." });
+      findings.push({ status: "warn", tag: "Improve", title: "Incomplete Open Graph (" + ogMissing.length + " missing)", body: "Complete the OG tag set for consistently branded social previews.", details: { label: "Missing Open Graph tags", items: ogMissing } });
     }
 
-    if (twCard) {
-      findings.push({ status: "pass", tag: "Good", title: "Twitter Card declared", body: "twitter:card = " + twCard });
+    const twPresentList = Object.keys(twPresent).map(function (k) { return k + " = " + twPresent[k]; });
+    if (twMissing.length === 0) {
+      findings.push({ status: "pass", tag: "Good", title: "Twitter Card fully configured", body: "All core Twitter/X tags are present.", details: { label: "Twitter Card tags", items: twPresentList } });
+    } else if (twMissing.length === twTags.length) {
+      findings.push({ status: "warn", tag: "Improve", title: "No Twitter Card tags", body: "Add twitter:card (e.g. summary_large_image), twitter:title, twitter:description and twitter:image for polished previews on X.", details: { label: "Missing Twitter Card tags", items: twMissing } });
     } else {
-      findings.push({ status: "warn", tag: "Improve", title: "Missing Twitter Card", body: "Add twitter:card meta tag (e.g. summary_large_image) for polished Twitter/X previews." });
+      findings.push({ status: "warn", tag: "Improve", title: "Incomplete Twitter Card", body: "Fill in the missing Twitter Card tags.", details: { label: "Missing Twitter Card tags", items: twMissing } });
+    }
+
+    const favicon = doc.querySelector('link[rel~="icon" i]');
+    if (favicon) {
+      findings.push({ status: "pass", tag: "Good", title: "Favicon declared", body: "Browser and search engines can render the brand mark.", code: favicon.getAttribute("href") || "" });
+    } else {
+      findings.push({ status: "warn", tag: "Improve", title: "No favicon link found", body: "Declare <link rel=\"icon\" href=\"/favicon.ico\"> (or a PNG/SVG variant)." });
     }
     return findings;
   }
@@ -183,14 +249,29 @@
     const text = (doc.body && doc.body.innerText || doc.body && doc.body.textContent || "").trim();
     const words = text ? text.split(/\s+/).filter(Boolean).length : 0;
     if (words < 300) {
-      findings.push({ status: "warn", tag: "Improve", title: "Thin content", body: "Approximately " + words + " words detected. Aim for 600+ words on indexable pages to demonstrate topical depth." });
+      findings.push({ status: "warn", tag: "Improve", title: "Thin content (" + words + " words)", body: "Aim for 600+ words on indexable pages to demonstrate topical depth." });
+    } else if (words < 600) {
+      findings.push({ status: "warn", tag: "Improve", title: "Moderate content depth (" + words + " words)", body: "Competitive landing pages usually land between 800 and 1,500 words." });
     } else {
-      findings.push({ status: "pass", tag: "Good", title: "Healthy content volume", body: "Approximately " + words + " words detected on the page." });
+      findings.push({ status: "pass", tag: "Good", title: "Healthy content volume (" + words + " words)", body: "Substantial on-page copy for crawlers and users." });
     }
 
-    const ldjson = Array.from(doc.querySelectorAll('script[type="application/ld+json"]')).length;
-    if (ldjson > 0) {
-      findings.push({ status: "pass", tag: "Good", title: "Structured data detected", body: ldjson + " JSON-LD block(s) found — eligible for rich results." });
+    const ldjsonScripts = Array.from(doc.querySelectorAll('script[type="application/ld+json"]'));
+    const ldTypes = [];
+    ldjsonScripts.forEach(function (s) {
+      try {
+        const parsed = JSON.parse(s.textContent || "null");
+        const arr = Array.isArray(parsed) ? parsed : [parsed];
+        arr.forEach(function (entry) {
+          if (entry && entry["@type"]) {
+            if (Array.isArray(entry["@type"])) entry["@type"].forEach(function (t) { ldTypes.push(String(t)); });
+            else ldTypes.push(String(entry["@type"]));
+          }
+        });
+      } catch (_) { /* ignore */ }
+    });
+    if (ldjsonScripts.length > 0) {
+      findings.push({ status: "pass", tag: "Good", title: "Structured data detected", body: ldjsonScripts.length + " JSON-LD block(s) found — eligible for rich results.", details: { label: "Schema @types", items: ldTypes.length ? ldTypes : ["(no @type fields detected)"] } });
     } else {
       findings.push({ status: "warn", tag: "Improve", title: "No structured data found", body: "Add JSON-LD for Organization, WebSite, BreadcrumbList and content-specific schemas (Article, Product, LocalBusiness)." });
     }
@@ -200,6 +281,13 @@
       findings.push({ status: "pass", tag: "Good", title: "Language declared", body: "<html lang=\"" + langAttr + "\"> is set." });
     } else {
       findings.push({ status: "warn", tag: "Improve", title: "Missing lang attribute", body: "Declare the language on <html> (e.g. <html lang=\"en\">) for accessibility and localization." });
+    }
+
+    const hreflang = Array.from(doc.querySelectorAll('link[rel="alternate"][hreflang]'));
+    if (hreflang.length) {
+      findings.push({ status: "pass", tag: "Good", title: "hreflang alternates declared", body: hreflang.length + " hreflang link(s) declared for international targeting.", details: { label: "hreflang alternates", items: hreflang.map(function (l) { return l.getAttribute("hreflang") + " → " + l.getAttribute("href"); }) } });
+    } else {
+      findings.push({ status: "info", tag: "Signal", title: "No hreflang alternates", body: "Only needed if you serve multiple languages or regions." });
     }
     return findings;
   }
@@ -217,9 +305,15 @@
       ]);
 
       if (robotsTxt && /user-agent/i.test(robotsTxt)) {
-        findings.push({ status: "pass", tag: "Good", title: "robots.txt is accessible", body: "A robots.txt file is published at " + robotsUrl });
+        const disallowLines = (robotsTxt.match(/^disallow:.*/gim) || []);
+        findings.push({
+          status: "pass", tag: "Good", title: "robots.txt is accessible",
+          body: "Published at " + robotsUrl + (disallowLines.length ? " with " + disallowLines.length + " disallow rule(s)." : "."),
+          details: { label: "robots.txt preview", items: robotsTxt.split("\n").slice(0, 30).map(function (l) { return l.trim(); }).filter(Boolean) },
+        });
         if (/sitemap:/i.test(robotsTxt)) {
-          findings.push({ status: "pass", tag: "Good", title: "Sitemap referenced in robots.txt", body: "Crawlers are guided to the sitemap from robots.txt." });
+          const sitemapRefs = (robotsTxt.match(/^sitemap:.*/gim) || []).map(function (l) { return l.trim(); });
+          findings.push({ status: "pass", tag: "Good", title: "Sitemap referenced in robots.txt", body: sitemapRefs.length + " sitemap reference(s) found.", details: { label: "Sitemap references", items: sitemapRefs } });
         } else {
           findings.push({ status: "warn", tag: "Improve", title: "Sitemap not referenced in robots.txt", body: "Add \"Sitemap: " + sitemapUrl + "\" to robots.txt for faster discovery." });
         }
@@ -228,8 +322,16 @@
       }
 
       if (sitemapXml && /<urlset|<sitemapindex/i.test(sitemapXml)) {
+        const sitemapUrls = [];
+        const locRe = /<loc>([^<]+)<\/loc>/gi;
+        let m;
+        while ((m = locRe.exec(sitemapXml)) && sitemapUrls.length < 40) sitemapUrls.push(m[1].trim());
         const urlCount = (sitemapXml.match(/<url>/g) || []).length;
-        findings.push({ status: "pass", tag: "Good", title: "XML sitemap accessible", body: "Sitemap at " + sitemapUrl + (urlCount ? " (" + urlCount + " URLs)" : "") });
+        findings.push({
+          status: "pass", tag: "Good", title: "XML sitemap accessible",
+          body: "Sitemap at " + sitemapUrl + (urlCount ? " (" + urlCount + " URLs)" : ""),
+          details: { label: "Sitemap URLs (first 40)", items: sitemapUrls },
+        });
       } else {
         findings.push({ status: "warn", tag: "Improve", title: "XML sitemap not found", body: "Publish an XML sitemap at " + sitemapUrl + " and submit it in Google Search Console." });
       }
@@ -287,16 +389,50 @@
       throw new Error("PageSpeed Insights request failed (" + detail + ")");
     }
     const data = await res.json();
-    const cats = data && data.lighthouseResult && data.lighthouseResult.categories;
+    const lr = data && data.lighthouseResult;
+    const cats = lr && lr.categories;
     if (!cats) throw new Error("PageSpeed Insights returned no data.");
+    const audits = (lr && lr.audits) || {};
     function score(id) { return cats[id] ? Math.round((cats[id].score || 0) * 100) : null; }
+
+    function failingAuditsIn(categoryId) {
+      const cat = cats[categoryId];
+      if (!cat || !cat.auditRefs) return [];
+      return cat.auditRefs
+        .map(function (ref) { return { id: ref.id, weight: ref.weight, audit: audits[ref.id] }; })
+        .filter(function (x) {
+          const a = x.audit;
+          if (!a) return false;
+          if (a.scoreDisplayMode === "notApplicable" || a.scoreDisplayMode === "manual") return false;
+          if (a.score === null || a.score === undefined) return a.scoreDisplayMode === "informative";
+          return a.score < 1;
+        })
+        .map(function (x) {
+          const a = x.audit;
+          return {
+            id: x.id,
+            title: a.title || x.id,
+            description: (a.description || "").replace(/\[Learn[^\]]*\]\([^)]+\)/gi, "").trim(),
+            displayValue: a.displayValue || "",
+            score: a.score,
+            category: categoryId,
+          };
+        });
+    }
+
     return {
       performance: score("performance"),
       accessibility: score("accessibility"),
       bestPractices: score("best-practices"),
       seo: score("seo"),
-      metrics: ((data.lighthouseResult.audits || {})["metrics"] || {}).details || null,
+      metrics: ((audits || {})["metrics"] || {}).details || null,
       fieldData: data.loadingExperience || null,
+      failing: {
+        performance: failingAuditsIn("performance"),
+        accessibility: failingAuditsIn("accessibility"),
+        bestPractices: failingAuditsIn("best-practices"),
+        seo: failingAuditsIn("seo"),
+      },
     };
   }
 
@@ -334,6 +470,23 @@
       title: "Accessibility score: " + (psi.accessibility ?? "N/A") + "/100",
       body: "Covers color contrast, ARIA, tap target size and semantic markup. WCAG 2.1 AA is the baseline.",
     });
+
+    function pushFailing(list, target, badgeBody) {
+      list.forEach(function (a) {
+        target.push({
+          status: a.score === 0 ? "fail" : "warn",
+          tag: "Lighthouse",
+          title: a.title + (a.displayValue ? " — " + a.displayValue : ""),
+          body: a.description || badgeBody,
+        });
+      });
+    }
+    if (psi.failing) {
+      pushFailing(psi.failing.performance, findings.performance, "Performance issue detected by Lighthouse.");
+      pushFailing(psi.failing.bestPractices, findings.performance, "Best-practice issue detected by Lighthouse.");
+      pushFailing(psi.failing.seo, findings.performance, "Technical SEO issue detected by Lighthouse.");
+      pushFailing(psi.failing.accessibility, findings.accessibility, "Accessibility issue detected by Lighthouse.");
+    }
 
     if (psi.fieldData && psi.fieldData.metrics) {
       const m = psi.fieldData.metrics;
@@ -517,6 +670,7 @@
       logoDataUrl: input.logoDataUrl || "",
       contactEmail: input.contactEmail || "",
       notes: input.notes || "",
+      password: input.password || generatePassword(input.brandName),
       overall: overall,
       grade: gradeFromScore(overall),
       pillars: pillars,
@@ -536,8 +690,15 @@
     };
   }
 
+  function generatePassword(brandName) {
+    const slug = String(brandName || "brand").toLowerCase().replace(/[^a-z0-9]+/g, "").slice(0, 8) || "brand";
+    const rand = Math.random().toString(36).slice(2, 7);
+    return slug + "-" + rand;
+  }
+
   window.Audit = {
     runAudit: runAudit,
     normalizeUrl: normalizeUrl,
+    generatePassword: generatePassword,
   };
 })();
