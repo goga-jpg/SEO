@@ -90,6 +90,11 @@
           <span data-date></span>
           <span class="pill" data-grade></span>
         </div>
+        <div class="audit-card-pw">
+          <span>Password</span>
+          <code data-password></code>
+          <button type="button" class="pw-copy" data-action="copy-pw" title="Copy password">Copy</button>
+        </div>
       </div>
       <div class="audit-card-foot">
         <span class="open-link">Open audit →</span>
@@ -229,50 +234,171 @@
           </div>
         </section>
 
+        <section class="credentials" data-credentials hidden>
+          <div class="credentials-head">
+            <h3>Share Credentials</h3>
+            <p>Visible only inside the 5DM dashboard. External viewers opening the public link will never see this panel.</p>
+          </div>
+          <div class="credentials-grid">
+            <div>
+              <span>Audit URL</span>
+              <code data-cred-url></code>
+            </div>
+            <div>
+              <span>Password</span>
+              <code data-cred-pw></code>
+            </div>
+          </div>
+        </section>
+
+        <section class="narrative">
+          <div class="narr-kicker">The Hidden Problem</div>
+          <h2>Your website is quietly losing traffic, leads and revenue — and you may not know it yet.</h2>
+          <p>
+            Most brands pour effort into design and content without realising that search engines —
+            the largest source of qualified traffic on the internet — are reading the same pages very
+            differently. Missing structured data, slow Core Web Vitals, weak crawlability signals and
+            thin content can compound into a silent tax on every marketing dollar you spend.
+          </p>
+          <div class="stat-grid">
+            <div class="stat">
+              <strong>68%</strong>
+              <p>of all online experiences begin with a search engine (BrightEdge, 2024).</p>
+            </div>
+            <div class="stat">
+              <strong>53%</strong>
+              <p>of mobile visitors abandon pages that take longer than 3 seconds to load (Google).</p>
+            </div>
+            <div class="stat">
+              <strong>#1</strong>
+              <p>organic result on Google earns an average click-through rate of 27.6% (Backlinko, 2023).</p>
+            </div>
+            <div class="stat">
+              <strong>90.6%</strong>
+              <p>of indexed pages get zero search traffic from Google (Ahrefs content study).</p>
+            </div>
+          </div>
+        </section>
+
+        <section class="narrative stakes">
+          <div class="narr-kicker">What's at Stake</div>
+          <h2>The difference between a healthy SEO foundation and an overlooked one is measured in market share.</h2>
+          <p>
+            Competitors who invest in technical SEO, performance and content depth are compounding
+            their visibility every month. Brands that don't — even excellent ones — slowly drift
+            down the results, lose branded share of voice, and become dependent on paid acquisition
+            to maintain pipeline. The fix isn't a single dramatic rewrite; it's a structured sequence
+            of improvements, prioritised by impact.
+          </p>
+        </section>
+
         <section class="exec-summary">
           <h2>Executive Summary</h2>
           <p data-summary></p>
           <div class="pillars" data-pillars></div>
         </section>
 
+        <section class="narrative methodology">
+          <div class="narr-kicker">The Audit Methodology</div>
+          <h2>How this audit was produced — step by step.</h2>
+          <p>
+            Every audit from the 5DM SEO platform follows the same seven-stage methodology. The goal
+            is to assess the site from the perspective of both a search engine crawler and a real
+            user on a slow mobile connection — then surface the highest-leverage fixes.
+          </p>
+          <ol class="method-steps">
+            <li>
+              <h4>Step 1 · Crawl &amp; Retrieve the Target URL</h4>
+              <p>We fetch the live HTML using multiple fallback proxies to defeat rate-limiting. This ensures we evaluate the page that search engines and real users actually receive — including server-rendered content, meta tags and inline structured data.</p>
+            </li>
+            <li>
+              <h4>Step 2 · On-Page SEO Extraction</h4>
+              <p>Every element that matters to search engines is pulled apart: title tag, meta description, canonical, robots directives, viewport, headings hierarchy, image alt text, internal and external link profile. Each signal is measured against Google's documented best practices.</p>
+            </li>
+            <li>
+              <h4>Step 3 · Technical Crawlability</h4>
+              <p>We probe <code>robots.txt</code> and <code>sitemap.xml</code>, verify HTTPS, check the canonical host behaviour and look for indexing blockers. These are the foundational guards that decide whether your content is even eligible to rank.</p>
+            </li>
+            <li>
+              <h4>Step 4 · Performance &amp; Core Web Vitals</h4>
+              <p>We run Google Lighthouse (mobile strategy) via the PageSpeed Insights API and pull field data from the Chrome UX Report where available. LCP, INP, CLS and Total Blocking Time are measured — these are ranking signals and conversion-critical UX metrics.</p>
+            </li>
+            <li>
+              <h4>Step 5 · Accessibility &amp; Best Practices</h4>
+              <p>Automated WCAG 2.1 AA checks run through Lighthouse — contrast ratios, tap-target sizes, ARIA correctness, semantic markup, image alternatives. Accessibility improvements almost always lift SEO and conversion in parallel.</p>
+            </li>
+            <li>
+              <h4>Step 6 · Content &amp; Social Signals</h4>
+              <p>We measure content depth, the presence of structured data (JSON-LD), Open Graph and Twitter Card coverage, language declarations and international (hreflang) targeting. These govern how your content appears across Google, LinkedIn, WhatsApp, X and more.</p>
+            </li>
+            <li>
+              <h4>Step 7 · Score, Prioritise &amp; Recommend</h4>
+              <p>Each pillar is scored 0–100 and weighted into a composite overall score. Findings are classified pass / warn / fail. The highest-impact remediations float to the top of the Priority Recommendations list — the exact order to work them in.</p>
+            </li>
+          </ol>
+        </section>
+
         <section class="section" data-section="onpage">
           <h2>On-Page SEO</h2>
+          <p class="section-intro">On-page SEO is the set of signals you directly control inside each page's HTML — the title, meta description, headings, internal links and image alt text. When these are tight, search engines understand exactly what the page is about, and users click through more often. When they're loose, you leak traffic to competitors who simply wrote clearer titles.</p>
           <div class="findings" data-findings="onpage"></div>
         </section>
 
         <section class="section" data-section="technical">
           <h2>Technical SEO</h2>
+          <p class="section-intro">Technical SEO controls whether search engines can even reach, render and index your pages. A broken robots.txt, a missing sitemap, a blocked resource or a wrong canonical can quietly remove whole sections of a site from the index. This pillar is the foundation everything else sits on.</p>
           <div class="findings" data-findings="technical"></div>
         </section>
 
         <section class="section" data-section="performance">
-          <h2>Performance</h2>
+          <h2>Performance &amp; Core Web Vitals</h2>
+          <p class="section-intro">Google ranks faster pages higher and real users abandon slow ones — the correlation between speed and both conversion and ranking is now well-documented. These findings come from Google Lighthouse (mobile) plus real-user field data where available. Target: Largest Contentful Paint under 2.5s, Interaction to Next Paint under 200ms, Cumulative Layout Shift under 0.1.</p>
           <div class="findings" data-findings="performance"></div>
         </section>
 
         <section class="section" data-section="accessibility">
           <h2>Accessibility</h2>
+          <p class="section-intro">Accessibility ensures your content is usable by everyone — including people using screen readers, keyboard navigation, or low-vision configurations. It's a legal requirement in many markets, it overlaps heavily with SEO (semantic markup, alt text, labelled controls) and it measurably expands your addressable audience.</p>
           <div class="findings" data-findings="accessibility"></div>
         </section>
 
         <section class="section" data-section="content">
           <h2>Content Signals</h2>
+          <p class="section-intro">Content is how you prove topical authority. This pillar checks content depth, the presence of structured data (JSON-LD for Organization, WebSite, Article, Product, LocalBusiness and more), declared language, and international targeting. Strong content signals unlock rich results, featured snippets and higher click-through rates.</p>
           <div class="findings" data-findings="content"></div>
         </section>
 
         <section class="section" data-section="social">
-          <h2>Social & Sharing</h2>
+          <h2>Social &amp; Sharing</h2>
+          <p class="section-intro">Open Graph and Twitter Card metadata dictate how your links render when they're shared to Facebook, LinkedIn, WhatsApp, Slack, X and other platforms. A missing or malformed preview is a missed branding moment every single time someone shares your content — and it measurably reduces social click-through rates.</p>
           <div class="findings" data-findings="social"></div>
         </section>
 
         <section class="section" data-section="security">
-          <h2>Security & Trust</h2>
+          <h2>Security &amp; Trust</h2>
+          <p class="section-intro">HTTPS is a confirmed Google ranking signal and browsers now display warnings on insecure pages. This pillar also considers canonical host behaviour (www vs. apex) — an often-overlooked detail that can split your link authority across two hostnames.</p>
           <div class="findings" data-findings="security"></div>
         </section>
 
         <section class="section recommendations">
           <h2>Priority Recommendations</h2>
+          <p class="section-intro">These are the highest-impact fixes we surfaced, ordered by priority. Addressing the High-priority items typically unlocks the biggest movement in overall score — and compounds over the following weeks as search engines re-crawl and re-index your pages.</p>
           <ol data-recommendations></ol>
+        </section>
+
+        <section class="closing">
+          <h2>The Path Forward</h2>
+          <p>
+            The findings above are not a verdict — they're a map. Work the Priority Recommendations
+            top-down, starting with the critical (red) items and then the warnings. Re-run this
+            audit in 30 days to measure the lift. SEO compounds: every fix you ship today earns
+            interest every month thereafter as search engines re-crawl and re-rank.
+          </p>
+          <p>
+            For strategic implementation — content production, technical engineering, link-building,
+            GEO and analytics — partner with the 5DM team. We take brands from discovery to sustained
+            organic dominance.
+          </p>
         </section>
 
         <footer class="report-footer">

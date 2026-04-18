@@ -118,6 +118,8 @@
 
   function renderReport(root, audit, opts) {
     const mode = (opts && opts.mode) || "basic";
+    const isPlatform = !!(opts && opts.isPlatform);
+    const shareUrl = (opts && opts.shareUrl) || "";
     const report = root;
     setBrandColors(report, audit.colors);
 
@@ -128,6 +130,21 @@
     report.querySelector("[data-brand-url]").textContent = audit.url;
     const modeLabel = report.querySelector("[data-mode-label]");
     if (modeLabel) modeLabel.textContent = "SEO Audit · " + (mode === "granular" ? "Granular" : "Basic");
+
+    // Credentials panel — only visible inside the 5DM dashboard (platform auth).
+    // External viewers who opened via the per-audit password will never see this.
+    const credEl = report.querySelector("[data-credentials]");
+    if (credEl) {
+      if (isPlatform) {
+        credEl.hidden = false;
+        const urlNode = credEl.querySelector("[data-cred-url]");
+        const pwNode = credEl.querySelector("[data-cred-pw]");
+        if (urlNode) urlNode.textContent = shareUrl || ("/" + (audit.slug || ""));
+        if (pwNode) pwNode.textContent = audit.password || "—";
+      } else {
+        credEl.hidden = true;
+      }
+    }
 
     report.querySelector("[data-score]").textContent = audit.overall;
     report.querySelector("[data-date]").textContent = formatDate(audit.createdAt);

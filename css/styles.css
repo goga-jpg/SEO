@@ -545,9 +545,217 @@ img { max-width: 100%; display: block; }
   font-size: 14px; z-index: 100;
 }
 
-/* PRINT-FRIENDLY WHEN PDF */
+/* NARRATIVE BLOCKS */
+.narrative {
+  padding: 44px 48px 8px;
+  color: #1f2937;
+}
+.narrative .narr-kicker {
+  font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: .18em;
+  color: var(--brand-primary); margin-bottom: 10px;
+}
+.narrative h2 {
+  font-size: 26px; line-height: 1.2; margin: 0 0 14px;
+  color: var(--brand-secondary); letter-spacing: -0.01em;
+}
+.narrative p { line-height: 1.75; color: #374151; margin: 0 0 14px; font-size: 14.5px; }
+.narrative.stakes { padding-top: 8px; }
+
+.stat-grid {
+  display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 14px; margin-top: 14px;
+}
+.stat {
+  background: #f8fafc; border: 1px solid #eef1f5; border-radius: 12px;
+  padding: 16px 18px;
+}
+.stat strong {
+  display: block; font-size: 32px; font-weight: 800;
+  color: var(--brand-primary); letter-spacing: -0.02em; margin-bottom: 6px;
+}
+.stat p { margin: 0; font-size: 12.5px; color: #475569; line-height: 1.5; }
+
+.methodology { padding: 36px 48px 8px; }
+.method-steps {
+  list-style: none; counter-reset: step;
+  padding: 0; margin: 18px 0 0; display: grid; gap: 12px;
+}
+.method-steps > li {
+  counter-increment: step;
+  background: #ffffff;
+  border: 1px solid #e5e7eb; border-radius: 12px;
+  padding: 16px 18px 16px 64px; position: relative;
+}
+.method-steps > li::before {
+  content: counter(step);
+  position: absolute; left: 16px; top: 16px;
+  width: 34px; height: 34px; border-radius: 50%;
+  background: var(--brand-primary); color: #fff;
+  display: grid; place-items: center;
+  font-weight: 700; font-size: 14px;
+}
+.method-steps h4 {
+  margin: 0 0 4px; font-size: 15px; color: var(--brand-secondary);
+}
+.method-steps p { margin: 0; font-size: 13.5px; color: #4b5563; line-height: 1.6; }
+.method-steps code {
+  background: #f3f4f6; border-radius: 4px; padding: 1px 5px;
+  font-size: 12px; color: #111827;
+}
+
+.section-intro {
+  margin: 0 0 18px; color: #475569; font-size: 13.5px; line-height: 1.7;
+  border-left: 3px solid var(--brand-primary); padding: 4px 0 4px 14px;
+  background: #f8fafc; border-radius: 0 8px 8px 0;
+  padding-right: 14px; padding-top: 10px; padding-bottom: 10px;
+}
+
+.closing {
+  padding: 32px 48px 8px; border-top: 1px solid #eee;
+}
+.closing h2 { margin: 0 0 12px; font-size: 20px; color: var(--brand-secondary); }
+.closing p { margin: 0 0 12px; color: #374151; line-height: 1.7; font-size: 14px; }
+
+/* CREDENTIALS — dashboard-only panel */
+.credentials {
+  margin: 24px 48px 0;
+  padding: 18px 22px;
+  border: 1px dashed var(--brand-primary);
+  border-radius: 14px;
+  background: linear-gradient(135deg, rgba(0,166,81,0.04), rgba(0,166,81,0.01));
+}
+.credentials-head h3 {
+  margin: 0 0 4px; font-size: 15px; color: var(--brand-secondary);
+}
+.credentials-head p {
+  margin: 0 0 12px; color: #6b7280; font-size: 12.5px; line-height: 1.55;
+}
+.credentials-grid {
+  display: grid; grid-template-columns: 1fr 1fr; gap: 12px;
+}
+.credentials-grid > div { display: flex; flex-direction: column; gap: 4px; }
+.credentials-grid span {
+  font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: .12em;
+  color: #6b7280;
+}
+.credentials-grid code {
+  background: #fff; border: 1px solid #e5e7eb; border-radius: 8px;
+  padding: 8px 12px; font-size: 12.5px; color: #111827;
+  font-family: "SFMono-Regular", ui-monospace, Menlo, Consolas, monospace;
+  word-break: break-all;
+}
+
+/* DASHBOARD CARD — password cell */
+.audit-card-pw {
+  margin-top: 10px;
+  display: grid; grid-template-columns: auto 1fr auto; align-items: center; gap: 8px;
+  padding: 8px 10px; background: var(--bg); border: 1px solid var(--border);
+  border-radius: 10px;
+}
+.audit-card-pw span {
+  font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: .1em;
+  color: var(--text-mute);
+}
+.audit-card-pw code {
+  font-family: "SFMono-Regular", ui-monospace, Menlo, Consolas, monospace;
+  font-size: 12px; color: var(--text);
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.pw-copy {
+  padding: 4px 10px; border-radius: 999px;
+  background: transparent; color: var(--text-dim);
+  border: 1px solid var(--border-strong);
+  font-size: 11px; font-weight: 600;
+}
+.pw-copy:hover { color: var(--primary); border-color: var(--primary); }
+
+/* PRINT-FRIENDLY WHEN PDF
+   Goals: no icons anywhere, no big top whitespace, proper A4 pagination. */
 .pdf-mode .report-topbar { display: none; }
-.pdf-mode .report-doc { box-shadow: none; margin: 0; border-radius: 0; }
+.pdf-mode { background: #ffffff; }
+.pdf-mode .report-doc {
+  box-shadow: none; margin: 0; border-radius: 0;
+  max-width: none; width: 794px;
+}
+
+/* Remove every icon/decoration in PDF output — pure text only. */
+.pdf-mode .f-icon { display: none; }
+.pdf-mode .f-tag { display: none; }
+.pdf-mode .score-ring { display: none; }
+.pdf-mode .ring-center { display: none; }
+.pdf-mode .section h2::before { display: none; }
+.pdf-mode .cover::before,
+.pdf-mode .cover::after { display: none; }
+.pdf-mode .credentials { display: none; }
+.pdf-mode .pillar .bar { display: none; }
+.pdf-mode .recommendations li { padding-left: 18px; }
+.pdf-mode .recommendations li::before { display: none; }
+.pdf-mode .method-steps > li { padding-left: 18px; }
+.pdf-mode .method-steps > li::before { display: none; }
+.pdf-mode .method-steps > li h4::before {
+  content: "Step " counter(step) " — "; color: var(--brand-primary); font-weight: 700;
+}
+
+/* Tighten layout & kill the big top gap on page 1 in PDF mode. */
+.pdf-mode .cover {
+  padding: 24px 28px; gap: 18px;
+  grid-template-columns: 1.4fr 1fr;
+}
+.pdf-mode .cover-title h1 { font-size: 30px; margin: 6px 0 4px; }
+.pdf-mode .cover-title p { font-size: 12px; }
+.pdf-mode .cover-left { gap: 10px; }
+.pdf-mode .cover-logo { max-height: 42px; padding: 6px 10px; }
+.pdf-mode .cover-meta { gap: 8px; }
+.pdf-mode .cover-meta > div { padding: 8px; }
+.pdf-mode .cover-meta span { font-size: 9px; }
+.pdf-mode .cover-meta b { font-size: 12px; }
+
+.pdf-mode .finding {
+  grid-template-columns: 1fr;
+  padding: 10px 12px;
+}
+.pdf-mode .finding .f-body h4 { font-size: 13px; }
+.pdf-mode .finding .f-body p { font-size: 12px; line-height: 1.5; }
+.pdf-mode .narrative { padding: 22px 28px 6px; }
+.pdf-mode .narrative h2 { font-size: 18px; }
+.pdf-mode .narrative p { font-size: 12.5px; line-height: 1.6; }
+.pdf-mode .stat strong { font-size: 22px; }
+.pdf-mode .exec-summary { padding: 20px 28px 4px; }
+.pdf-mode .section { padding: 18px 28px; }
+.pdf-mode .section h2 { font-size: 16px; margin-bottom: 10px; }
+.pdf-mode .section-intro { font-size: 12px; padding: 8px 12px; }
+.pdf-mode .closing { padding: 22px 28px; }
+.pdf-mode .closing h2 { font-size: 16px; }
+.pdf-mode .closing p { font-size: 12.5px; line-height: 1.6; }
+.pdf-mode .report-footer { padding: 18px 28px; }
+.pdf-mode .report-footer p { font-size: 11px; }
+.pdf-mode .method-steps h4 { font-size: 13px; }
+.pdf-mode .method-steps p { font-size: 12px; line-height: 1.5; }
+.pdf-mode .pillar { padding: 10px 12px; }
+.pdf-mode .pillar .p-score strong { font-size: 20px; }
+
+/* Pagination hints — keep logical blocks together when paginating to A4. */
+.pdf-mode .cover,
+.pdf-mode .narrative,
+.pdf-mode .methodology,
+.pdf-mode .exec-summary,
+.pdf-mode .section,
+.pdf-mode .closing,
+.pdf-mode .report-footer,
+.pdf-mode .finding,
+.pdf-mode .pillar,
+.pdf-mode .stat,
+.pdf-mode .method-steps > li,
+.pdf-mode .recommendations li {
+  page-break-inside: avoid;
+  break-inside: avoid;
+}
+.pdf-mode .section h2,
+.pdf-mode .narrative h2,
+.pdf-mode .closing h2 {
+  page-break-after: avoid;
+  break-after: avoid;
+}
 
 /* SHARE BAR */
 .share-bar {

@@ -129,7 +129,19 @@
       const grade = node.querySelector("[data-grade]");
       grade.textContent = "Grade " + (a.grade ? a.grade.letter : "—");
       grade.classList.add((a.grade && a.grade.className) || "b");
-      function open() { navigate("/" + encodeURIComponent(a.slug)); }
+      const pwCode = node.querySelector("[data-password]");
+      if (pwCode) pwCode.textContent = a.password || "—";
+      const pwCopy = node.querySelector('[data-action="copy-pw"]');
+      if (pwCopy) {
+        pwCopy.addEventListener("click", function (e) {
+          e.stopPropagation();
+          navigator.clipboard.writeText(a.password || "").then(function () { toast("Password copied."); });
+        });
+      }
+      function open(e) {
+        if (e && e.target && e.target.closest && e.target.closest('[data-action="copy-pw"]')) return;
+        navigate("/" + encodeURIComponent(a.slug));
+      }
       card.addEventListener("click", open);
       card.addEventListener("keydown", function (e) {
         if (e.key === "Enter" || e.key === " ") { e.preventDefault(); open(); }
@@ -272,9 +284,13 @@
 
     mount("tpl-report");
     const doc = document.getElementById("report-doc");
+    const shareUrl = window.location.origin + (BASE_PATH || "") + "/" + encodeURIComponent(audit.slug);
 
     // View mode: basic / granular
     let mode = "basic";
+    const renderOpts = function () {
+      return { mode: mode, isPlatform: hasPlatformAuth, shareUrl: shareUrl };
+    };
     const toggleButtons = document.querySelectorAll(".view-toggle button");
     toggleButtons.forEach(function (b) {
       b.addEventListener("click", function () {
@@ -285,11 +301,11 @@
           x.setAttribute("aria-selected", active ? "true" : "false");
         });
         doc.setAttribute("data-mode", mode);
-        window.Report.renderReport(doc, audit, { mode: mode });
+        window.Report.renderReport(doc, audit, renderOpts());
       });
     });
 
-    window.Report.renderReport(doc, audit, { mode: mode });
+    window.Report.renderReport(doc, audit, renderOpts());
 
     document.querySelectorAll('[data-action="back"]').forEach(function (b) {
       b.addEventListener("click", function (e) { e.preventDefault(); navigate("/"); });
@@ -334,13 +350,36 @@
     document.body.classList.add("pdf-mode");
     const suffix = mode === "granular" ? "-granular" : "";
     const filename = (audit.slug || "seo-audit") + "-seo-audit" + suffix + ".pdf";
+    // A4 @ 96dpi is 794 x 1123 px. Force the report to that content width so
+    // html2canvas rasterises it at the exact proportions jsPDF expects,
+    // eliminating the "giant top margin" that happens when source is wider
+    // than the A4 page and gets down-scaled.
     const opts = {
-      margin: 0,
+      margin: [10, 10, 12, 10],
       filename: filename,
       image: { type: "jpeg", quality: 0.98 },
-      html2canvas: { scale: 2, useCORS: true, backgroundColor: "#ffffff", logging: false },
-      jsPDF: { unit: "px", format: [source.scrollWidth, source.scrollHeight], orientation: "portrait" },
-      pagebreak: { mode: ["css", "legacy"] },
+      html2canvas: {
+        scale: 2,
+        useCORS: true,
+        backgroundColor: "#ffffff",
+        logging: false,
+        windowWidth: 794,
+      },
+      jsPDF: { unit: "mm", format: "a4", orientation: "portrait", compress: true },
+      pagebreak: {
+        mode: ["avoid-all", "css", "legacy"],
+        avoid: [
+          ".finding",
+          ".pillar",
+          ".stat",
+          ".method-steps > li",
+          ".recommendations li",
+          ".section-intro",
+          ".cover",
+          ".credentials",
+          ".report-footer",
+        ],
+      },
     };
     window.html2pdf().set(opts).from(source).save().then(function () {
       document.body.classList.remove("pdf-mode");
