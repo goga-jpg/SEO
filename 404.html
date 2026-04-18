@@ -1,0 +1,17 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>5DM SEO Audit</title>
+  <script>
+    // GitHub Pages / static-host SPA fallback:
+    // Preserve the originally requested path and forward to /SEO/ shell.
+    (function () {
+      var path = window.location.pathname + window.location.search + window.location.hash;
+      var target = "/SEO/?redirect=" + encodeURIComponent(path);
+      window.location.replace(target);
+    })();
+  </script>
+</head>
+<body></body>
+</html>

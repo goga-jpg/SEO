@@ -1,0 +1,13 @@
+{
+  "name": "5dm-seo-audit-platform",
+  "version": "1.0.0",
+  "private": true,
+  "description": "5DM Africa SEO Audit Platform — generate branded, downloadable SEO audits at dashboards.5dm.africa/SEO.",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "node server.js 4173"
+  },
+  "engines": {
+    "node": ">=16"
+  }
+}

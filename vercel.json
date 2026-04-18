@@ -1,0 +1,7 @@
+{
+  "cleanUrls": true,
+  "rewrites": [
+    { "source": "/SEO/:slug*", "destination": "/SEO/index.html" },
+    { "source": "/:slug*", "destination": "/SEO/index.html" }
+  ]
+}

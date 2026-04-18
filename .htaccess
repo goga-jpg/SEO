@@ -1,0 +1,20 @@
+# Apache SPA fallback for the 5DM SEO Audit Platform
+# Deployed under /SEO/ — any unknown sub-path falls back to /SEO/index.html.
+<IfModule mod_rewrite.c>
+  RewriteEngine On
+  RewriteBase /SEO/
+
+  # Serve real files and directories as-is
+  RewriteCond %{REQUEST_FILENAME} -f [OR]
+  RewriteCond %{REQUEST_FILENAME} -d
+  RewriteRule ^ - [L]
+
+  # Everything else under /SEO/ -> SPA shell
+  RewriteRule ^ index.html [L]
+</IfModule>
+
+<IfModule mod_headers.c>
+  # Ensure audits / logos behave well when shared
+  Header set X-Content-Type-Options "nosniff"
+  Header set Referrer-Policy "strict-origin-when-cross-origin"
+</IfModule>

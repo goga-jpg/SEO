@@ -1,0 +1,4 @@
+# Netlify / Cloudflare Pages SPA fallback for the 5DM SEO Audit Platform.
+# Any sub-path of /SEO/ serves the platform shell; client-side routing picks up the brand slug.
+/SEO/*    /SEO/index.html   200
+/*        /SEO/index.html   200

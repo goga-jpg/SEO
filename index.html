@@ -1,0 +1,278 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="description" content="5DM SEO Audit Platform — generate professional, personalized SEO audits." />
+  <title>5DM SEO Audit Platform</title>
+  <link rel="icon" href="https://5dm.africa/wp-content/uploads/2025/05/Isolation_Mode.webp" type="image/webp" />
+  <link rel="preconnect" href="https://www.googleapis.com" />
+  <link rel="preconnect" href="https://api.allorigins.win" />
+  <link rel="stylesheet" href="css/styles.css" />
+</head>
+<body>
+  <div id="app" class="app-root" aria-live="polite"></div>
+
+  <template id="tpl-auth">
+    <section class="auth-screen">
+      <div class="auth-card">
+        <img class="auth-logo" src="https://5dm.africa/wp-content/uploads/2025/05/Isolation_Mode.webp" alt="5DM" />
+        <h1 class="auth-title">5DM SEO Audit Platform</h1>
+        <p class="auth-sub">Enter the access password to continue</p>
+        <form class="auth-form" autocomplete="off">
+          <input type="password" name="password" placeholder="Access password" required autofocus />
+          <button type="submit" class="btn btn-primary">Unlock</button>
+          <p class="auth-error" hidden>Incorrect password. Please try again.</p>
+        </form>
+        <p class="auth-foot">Powered by 5DM Africa</p>
+      </div>
+    </section>
+  </template>
+
+  <template id="tpl-dashboard">
+    <section class="dashboard">
+      <header class="topbar">
+        <div class="brand">
+          <img src="https://5dm.africa/wp-content/uploads/2025/05/Isolation_Mode.webp" alt="5DM" />
+          <div>
+            <h1>SEO Audit Platform</h1>
+            <p>Dashboards · 5DM Africa</p>
+          </div>
+        </div>
+        <div class="topbar-actions">
+          <button class="btn btn-primary" data-action="new-audit">+ New Audit</button>
+          <button class="btn btn-ghost" data-action="logout">Logout</button>
+        </div>
+      </header>
+
+      <section class="dash-hero">
+        <h2>All Audits</h2>
+        <p>Click a card to open the branded audit report.</p>
+      </section>
+
+      <section class="audit-grid" data-audit-grid>
+        <div class="empty-state" data-empty hidden>
+          <h3>No audits yet</h3>
+          <p>Create your first branded SEO audit to see it here.</p>
+          <button class="btn btn-primary" data-action="new-audit">Start a new audit</button>
+        </div>
+      </section>
+    </section>
+  </template>
+
+  <template id="tpl-card">
+    <article class="audit-card" tabindex="0" role="button">
+      <div class="audit-card-head">
+        <div class="audit-card-logo"><img alt="" /></div>
+        <div class="audit-card-score"><span data-score>0</span><small>/100</small></div>
+      </div>
+      <div class="audit-card-body">
+        <h3 data-name></h3>
+        <p data-url></p>
+        <div class="audit-card-meta">
+          <span data-date></span>
+          <span class="pill" data-grade></span>
+        </div>
+      </div>
+      <div class="audit-card-foot">
+        <span class="open-link">Open audit →</span>
+      </div>
+    </article>
+  </template>
+
+  <template id="tpl-new-audit">
+    <section class="wizard">
+      <header class="topbar small">
+        <a class="back" href="#" data-action="back">← Back to dashboard</a>
+      </header>
+      <div class="wizard-card">
+        <h2>Create New SEO Audit</h2>
+        <p class="muted">Provide the brand details and the site you want to audit. We will generate a personalized, downloadable audit report.</p>
+
+        <form class="audit-form" novalidate>
+          <div class="row">
+            <label>
+              <span>Brand Name *</span>
+              <input type="text" name="brandName" required placeholder="e.g. Safaricom" />
+            </label>
+            <label>
+              <span>Website URL *</span>
+              <input type="url" name="url" required placeholder="https://www.example.com" />
+            </label>
+          </div>
+
+          <div class="row">
+            <label>
+              <span>Primary Brand Color *</span>
+              <input type="color" name="primaryColor" value="#00a651" />
+            </label>
+            <label>
+              <span>Secondary Brand Color *</span>
+              <input type="color" name="secondaryColor" value="#111111" />
+            </label>
+            <label>
+              <span>Accent Color</span>
+              <input type="color" name="accentColor" value="#ffd200" />
+            </label>
+          </div>
+
+          <div class="row">
+            <label class="logo-upload">
+              <span>Brand Logo (PNG/SVG/WEBP, max 2MB)</span>
+              <input type="file" name="logo" accept="image/png,image/jpeg,image/svg+xml,image/webp" />
+              <div class="logo-preview" data-logo-preview>
+                <span>Preview</span>
+              </div>
+            </label>
+            <label>
+              <span>Contact Email (optional)</span>
+              <input type="email" name="contactEmail" placeholder="strategy@brand.com" />
+            </label>
+          </div>
+
+          <div class="row">
+            <label class="full">
+              <span>Audit Notes (optional)</span>
+              <textarea name="notes" rows="3" placeholder="Any context we should include in the executive summary..."></textarea>
+            </label>
+          </div>
+
+          <div class="wizard-actions">
+            <button type="button" class="btn btn-ghost" data-action="back">Cancel</button>
+            <button type="submit" class="btn btn-primary">Run SEO Audit</button>
+          </div>
+        </form>
+      </div>
+    </section>
+  </template>
+
+  <template id="tpl-running">
+    <section class="wizard">
+      <div class="wizard-card running">
+        <div class="spinner"></div>
+        <h2>Running SEO Audit…</h2>
+        <p class="muted">This takes 20–60 seconds. Please don't close this tab.</p>
+        <ul class="progress" data-progress>
+          <li data-step="fetch">Fetching target site</li>
+          <li data-step="parse">Analyzing on-page SEO</li>
+          <li data-step="pagespeed">Running performance & accessibility audit</li>
+          <li data-step="technical">Checking technical SEO signals</li>
+          <li data-step="score">Computing scores & recommendations</li>
+          <li data-step="finalize">Finalizing branded report</li>
+        </ul>
+      </div>
+    </section>
+  </template>
+
+  <template id="tpl-report">
+    <section class="report" data-report>
+      <header class="report-topbar">
+        <a class="back" href="#" data-action="back">← Back to dashboard</a>
+        <div class="report-actions">
+          <button class="btn btn-ghost" data-action="copy-link">Copy Link</button>
+          <button class="btn btn-primary" data-action="download-pdf">Download Full Audit</button>
+        </div>
+      </header>
+
+      <article class="report-doc" id="report-doc">
+        <section class="cover">
+          <div class="cover-left">
+            <img class="cover-logo" data-brand-logo alt="" />
+            <div class="cover-title">
+              <span>SEO Audit Report</span>
+              <h1 data-brand-name></h1>
+              <p data-brand-url></p>
+            </div>
+          </div>
+          <div class="cover-right">
+            <div class="score-ring" data-score-ring>
+              <svg viewBox="0 0 120 120">
+                <circle cx="60" cy="60" r="52" class="ring-bg"></circle>
+                <circle cx="60" cy="60" r="52" class="ring-fg" data-ring-fg></circle>
+              </svg>
+              <div class="ring-center"><strong data-score>0</strong><small>overall</small></div>
+            </div>
+            <div class="cover-meta">
+              <div><span>Prepared</span><b data-date></b></div>
+              <div><span>By</span><b>5DM Africa</b></div>
+              <div><span>Grade</span><b data-grade></b></div>
+            </div>
+          </div>
+        </section>
+
+        <section class="exec-summary">
+          <h2>Executive Summary</h2>
+          <p data-summary></p>
+          <div class="pillars" data-pillars></div>
+        </section>
+
+        <section class="section" data-section="onpage">
+          <h2>On-Page SEO</h2>
+          <div class="findings" data-findings="onpage"></div>
+        </section>
+
+        <section class="section" data-section="technical">
+          <h2>Technical SEO</h2>
+          <div class="findings" data-findings="technical"></div>
+        </section>
+
+        <section class="section" data-section="performance">
+          <h2>Performance</h2>
+          <div class="findings" data-findings="performance"></div>
+        </section>
+
+        <section class="section" data-section="accessibility">
+          <h2>Accessibility</h2>
+          <div class="findings" data-findings="accessibility"></div>
+        </section>
+
+        <section class="section" data-section="content">
+          <h2>Content Signals</h2>
+          <div class="findings" data-findings="content"></div>
+        </section>
+
+        <section class="section" data-section="social">
+          <h2>Social & Sharing</h2>
+          <div class="findings" data-findings="social"></div>
+        </section>
+
+        <section class="section" data-section="security">
+          <h2>Security & Trust</h2>
+          <div class="findings" data-findings="security"></div>
+        </section>
+
+        <section class="section recommendations">
+          <h2>Priority Recommendations</h2>
+          <ol data-recommendations></ol>
+        </section>
+
+        <footer class="report-footer">
+          <img src="https://5dm.africa/wp-content/uploads/2025/05/Isolation_Mode.webp" alt="5DM" />
+          <div>
+            <strong>5DM Africa</strong>
+            <p>This audit was generated by the 5DM SEO Audit Platform. For strategic implementation support, contact the 5DM team.</p>
+          </div>
+        </footer>
+      </article>
+    </section>
+  </template>
+
+  <template id="tpl-notfound">
+    <section class="notfound">
+      <div>
+        <h1>Audit not found</h1>
+        <p>We couldn't find an audit for this URL.</p>
+        <a class="btn btn-primary" data-action="back" href="#">Back to dashboard</a>
+      </div>
+    </section>
+  </template>
+
+  <div id="toast" class="toast" hidden></div>
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.2/html2pdf.bundle.min.js" defer></script>
+  <script src="js/storage.js" defer></script>
+  <script src="js/audit.js" defer></script>
+  <script src="js/report.js" defer></script>
+  <script src="js/app.js" defer></script>
+</body>
+</html>
