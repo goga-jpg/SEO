@@ -1,0 +1,43 @@
+name: Package downloadable release
+
+on:
+  push:
+    tags:
+      - "v*"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  zip:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Build distributable zip
+        run: |
+          set -euo pipefail
+          mkdir -p dist/SEO
+          rsync -a \
+            --exclude='.git' \
+            --exclude='.github' \
+            --exclude='dist' \
+            --exclude='node_modules' \
+            ./ dist/SEO/
+          cd dist
+          zip -r 5dm-seo-audit-platform.zip SEO
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: 5dm-seo-audit-platform
+          path: dist/5dm-seo-audit-platform.zip
+
+      - name: Attach zip to GitHub Release
+        if: startsWith(github.ref, 'refs/tags/')
+        uses: softprops/action-gh-release@v2
+        with:
+          files: dist/5dm-seo-audit-platform.zip
+          generate_release_notes: true
